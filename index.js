@@ -58,6 +58,13 @@ async function run() {
       }
     });
 
+      //   update camp
+      app.post("/camps", async (req, res) => {
+        const camp = req.body;
+        const result = await campCollection.insertOne(camp);
+        res.send(result);
+      });
+
     // Register a participant
     app.post("/participants", async (req, res) => {
       try {
