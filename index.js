@@ -28,34 +28,56 @@ async function run() {
 
     const db = client.db("healCoordDB");
     const campCollection = db.collection("camps");
+    const participantCollection = db.collection("participants");
 
     // Get all camps
     app.get("/camps", async (req, res) => {
-        try {
-          const camps = await campCollection.find().toArray();
-          res.send(camps);
-        } catch (error) {
-            res.status(500).send({ message: "Failed to fetch camps", error });
-        }
-      });
+      try {
+        const camps = await campCollection.find().toArray();
+        res.send(camps);
+      } catch (error) {
+        res.status(500).send({ message: "Failed to fetch camps", error });
+      }
+    });
 
     //  Get a single camp by ID
-      app.get("/camps/:id", async (req, res) => {
-        try {
-          const id = req.params.id;
-          const query = { _id: new ObjectId(id) };
-          const camp = await campCollection.findOne(query);
-  
-          if (!camp) {
-            return res.status(404).send({ message: "Camp not found" });
-          }
-  
-          res.send(camp);
-        } catch (error) {
-          res.status(500).send({ message: "Failed to fetch camp", error });
+    app.get("/camps/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const camp = await campCollection.findOne(query);
+
+        if (!camp) {
+          return res.status(404).send({ message: "Camp not found" });
         }
-      });
-  
+
+        res.send(camp);
+      } catch (error) {
+        res.status(500).send({ message: "Failed to fetch camp", error });
+      }
+    });
+
+    // Register a participant
+    app.post("/participants", async (req, res) => {
+      try {
+        const participant = req.body;
+        const result = await participantCollection.insertOne(participant);
+        res.send(result);
+      } catch (error) {
+        res
+          .status(500)
+          .send({ message: "Failed to register participant", error });
+      }
+    });
+
+    // Increment participant count
+    app.patch("/camps/:id/register", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const update = { $inc: { registeredParticipants: 1 } };
+      const result = await campCollection.updateOne(query, update);
+      res.send(result);
+    });
 
     app.get("/", (req, res) => {
       res.send("HealCoord server is running!");
