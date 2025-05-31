@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const { MongoClient, ServerApiVersion} = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -29,6 +29,7 @@ async function run() {
     const db = client.db("healCoordDB");
     const campCollection = db.collection("camps");
 
+    // Get all camps
     app.get("/camps", async (req, res) => {
         try {
           const camps = await campCollection.find().toArray();
@@ -37,6 +38,24 @@ async function run() {
             res.status(500).send({ message: "Failed to fetch camps", error });
         }
       });
+
+    //  Get a single camp by ID
+      app.get("/camps/:id", async (req, res) => {
+        try {
+          const id = req.params.id;
+          const query = { _id: new ObjectId(id) };
+          const camp = await campCollection.findOne(query);
+  
+          if (!camp) {
+            return res.status(404).send({ message: "Camp not found" });
+          }
+  
+          res.send(camp);
+        } catch (error) {
+          res.status(500).send({ message: "Failed to fetch camp", error });
+        }
+      });
+  
 
     app.get("/", (req, res) => {
       res.send("HealCoord server is running!");
