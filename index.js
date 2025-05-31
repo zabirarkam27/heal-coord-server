@@ -29,6 +29,7 @@ async function run() {
     const db = client.db("healCoordDB");
     const campCollection = db.collection("camps");
     const participantCollection = db.collection("participants");
+    const adminCollection = db.collection("organizers");
 
     // Get all camps
     app.get("/camps", async (req, res) => {
@@ -78,6 +79,33 @@ async function run() {
       const result = await campCollection.updateOne(query, update);
       res.send(result);
     });
+
+    // Update admin profile by email
+    app.put("/admins/:email", async (req, res) => {
+      const email = req.params.email;
+      const updateData = req.body;
+
+      try {
+        const filter = { email };
+        const options = { upsert: true }; 
+        const updateDoc = {
+          $set: updateData,
+        };
+
+        const result = await adminCollection.updateOne(
+          filter,
+          updateDoc,
+          options
+        );
+        res.send(result);
+      } catch (error) {
+        res
+          .status(500)
+          .send({ message: "Failed to update organizer profile", error });
+      }
+    });
+      
+      
 
     app.get("/", (req, res) => {
       res.send("HealCoord server is running!");
