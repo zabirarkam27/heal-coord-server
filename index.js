@@ -27,7 +27,16 @@ async function run() {
     await client.connect();
 
     const db = client.db("healCoordDB");
-    // const campCollection = db.collection("camps");
+    const campCollection = db.collection("camps");
+
+    app.get("/camps", async (req, res) => {
+        try {
+          const camps = await campCollection.find().toArray();
+          res.send(camps);
+        } catch (error) {
+            res.status(500).send({ message: "Failed to fetch camps", error });
+        }
+      });
 
     app.get("/", (req, res) => {
       res.send("HealCoord server is running!");
