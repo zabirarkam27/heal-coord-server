@@ -123,6 +123,31 @@ async function run() {
       }
     });
 
+
+    // confirm a participant
+    app.patch("/participants/:id", async (req, res) => {
+      const id = req.params.id;
+      const { confirmationStatus } = req.body;
+
+      try {
+        const result = await participantCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { confirmationStatus } }
+        );
+
+        if (result.matchedCount === 0) {
+          return res.status(404).send({ message: "Participant not found" });
+        }
+
+        res.send({ message: "Confirmation status updated" });
+      } catch (err) {
+        res.status(500).send({ message: "Failed to update", err });
+      }
+    });
+
+
+    
+
     // Increment participant count
     app.patch("/camps/:id/register", async (req, res) => {
       const id = req.params.id;
