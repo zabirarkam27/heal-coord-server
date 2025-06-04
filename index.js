@@ -10,10 +10,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.cuvfj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
-
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -31,6 +28,7 @@ async function run() {
     const participantCollection = db.collection("participants");
     const adminCollection = db.collection("admins");
 
+    /* =============Camp Routes===============*/
     // Get all camps
     app.get("/camps", async (req, res) => {
       try {
@@ -58,12 +56,49 @@ async function run() {
       }
     });
 
-      //   update camp
-      app.post("/camps", async (req, res) => {
-        const camp = req.body;
-        const result = await campCollection.insertOne(camp);
-        res.send(result);
-      });
+    //   post a new camp
+    app.post("/camps", async (req, res) => {
+      const camp = req.body;
+      const result = await campCollection.insertOne(camp);
+      res.send(result);
+    });
+
+    // Update a camp by ID
+    app.put("/camps/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedCamp = req.body;
+
+      try {
+        const result = await campCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updatedCamp }
+        );
+        if (result.matchedCount === 0) {
+          return res.status(404).send({ message: "Camp not found" });
+        }
+        res.send({ message: "Camp updated successfully" });
+      } catch (error) {
+        res.status(500).send({ message: "Failed to update camp", error });
+      }
+    });
+
+    // delete a camp by ID
+    app.delete("/delete-camp/:id", async (req, res) => {
+      const id = req.params.id;
+      try {
+        const result = await campCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+        if (result.deletedCount === 0) {
+          return res.status(404).send({ message: "Camp not found" });
+        }
+        res.send({ message: "Camp deleted successfully" });
+      } catch (error) {
+        res.status(500).send({ message: "Failed to delete camp", error });
+      }
+    });
+
+    /*==============Participant routes==============*/
 
     // Register a participant
     app.post("/participants", async (req, res) => {
@@ -78,6 +113,16 @@ async function run() {
       }
     });
 
+    // get all participant
+    app.get("/participants", async (req, res) => {
+      try {
+        const participants = await participantCollection.find().toArray();
+        res.send(participants);
+      } catch (err) {
+        res.status(500).send({ message: "Failed to fetch participants", err });
+      }
+    });
+
     // Increment participant count
     app.patch("/camps/:id/register", async (req, res) => {
       const id = req.params.id;
@@ -86,6 +131,8 @@ async function run() {
       const result = await campCollection.updateOne(query, update);
       res.send(result);
     });
+
+    /*================Admin routes=====================*/
 
     // Update admin profile by email
     app.put("/admins/:email", async (req, res) => {
@@ -107,8 +154,6 @@ async function run() {
           .send({ message: "Failed to update organizer profile", error });
       }
     });
-      
-      
 
     app.get("/", (req, res) => {
       res.send("HealCoord server is running!");
