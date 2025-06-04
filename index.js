@@ -132,6 +132,28 @@ async function run() {
       }
     });
 
+    // get participant by email
+    app.get("/participants/email/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const participants = await participantCollection
+          .find({ email })
+          .toArray();
+
+        if (participants.length === 0) {
+          return res
+            .status(404)
+            .send({ message: "No participants found for this email" });
+        }
+
+        res.send(participants);
+      } catch (err) {
+        res
+          .status(500)
+          .send({ message: "Failed to fetch participants by email", err });
+      }
+    });
+
     // confirm a participant
     app.patch("/participants/:id", async (req, res) => {
       const id = req.params.id;
