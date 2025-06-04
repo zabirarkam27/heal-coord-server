@@ -145,8 +145,25 @@ async function run() {
       }
     });
 
+    //delete a participant
+    app.delete("/participants/:id", async (req, res) => {
+      const id = req.params.id;
 
-    
+      try {
+        const result = await participantCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        if (result.deletedCount === 0) {
+          return res.status(404).send({ message: "Participant not found" });
+        }
+
+        res.send({ message: "Participant cancelled successfully" });
+      } catch (err) {
+        res.status(500).send({ message: "Failed to cancel", err });
+      }
+    });
+
 
     // Increment participant count
     app.patch("/camps/:id/register", async (req, res) => {
