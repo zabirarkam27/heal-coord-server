@@ -113,6 +113,15 @@ async function run() {
       }
     });
 
+    // Increment participant count
+    app.patch("/camps/:id/register", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const update = { $inc: { registeredParticipants: 1 } };
+      const result = await campCollection.updateOne(query, update);
+      res.send(result);
+    });
+
     // get all participant
     app.get("/participants", async (req, res) => {
       try {
@@ -122,7 +131,6 @@ async function run() {
         res.status(500).send({ message: "Failed to fetch participants", err });
       }
     });
-
 
     // confirm a participant
     app.patch("/participants/:id", async (req, res) => {
@@ -162,16 +170,6 @@ async function run() {
       } catch (err) {
         res.status(500).send({ message: "Failed to cancel", err });
       }
-    });
-
-
-    // Increment participant count
-    app.patch("/camps/:id/register", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const update = { $inc: { registeredParticipants: 1 } };
-      const result = await campCollection.updateOne(query, update);
-      res.send(result);
     });
 
     /*================Admin routes=====================*/
