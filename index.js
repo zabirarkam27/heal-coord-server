@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
@@ -27,6 +28,36 @@ async function run() {
     const campCollection = db.collection("camps");
     const participantCollection = db.collection("participants");
     const adminCollection = db.collection("admins");
+
+    /*============ Create JWT token============*/
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.JWT_SECRET, {
+        expiresIn: "7d",
+      });
+
+      res.send({ token });
+    });
+
+    /*========= Middleware to verify JWT token=======*/
+    function verifyToken(req, res, next) {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader) {
+        return res.status(401).send({ message: "Unauthorized access" });
+      }
+
+      const token = authHeader.split(" ")[1];
+
+      jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(403).send({ message: "Forbidden access" });
+        }
+
+        req.decoded = decoded;
+        next();
+      });
+    }
 
     /* =============Camp Routes===============*/
     // Get all camps
@@ -57,14 +88,14 @@ async function run() {
     });
 
     //   post a new camp
-    app.post("/camps", async (req, res) => {
+    app.post("/camps", verifyToken, async (req, res) => {
       const camp = req.body;
       const result = await campCollection.insertOne(camp);
       res.send(result);
     });
 
     // Update a camp by ID
-    app.put("/camps/:id", async (req, res) => {
+    app.put("/camps/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const updatedCamp = req.body;
 
@@ -83,7 +114,7 @@ async function run() {
     });
 
     // delete a camp by ID
-    app.delete("/delete-camp/:id", async (req, res) => {
+    app.delete("/delete-camp/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       try {
         const result = await campCollection.deleteOne({
@@ -101,7 +132,7 @@ async function run() {
     /*==============Participant routes==============*/
 
     // Register a participant
-    app.post("/participants", async (req, res) => {
+    app.post("/participants", verifyToken, async (req, res) => {
       try {
         const participant = req.body;
         const result = await participantCollection.insertOne(participant);
@@ -114,7 +145,7 @@ async function run() {
     });
 
     // Increment participant count
-    app.patch("/camps/:id/register", async (req, res) => {
+    app.patch("/camps/:id/register", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const update = { $inc: { registeredParticipants: 1 } };
@@ -155,7 +186,7 @@ async function run() {
     });
 
     // confirm a participant
-    app.patch("/participants/:id", async (req, res) => {
+    app.patch("/participants/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const { confirmationStatus } = req.body;
 
@@ -176,7 +207,7 @@ async function run() {
     });
 
     //delete a participant
-    app.delete("/participants/:id", async (req, res) => {
+    app.delete("/participants/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
 
       try {
@@ -197,7 +228,7 @@ async function run() {
     /*================Admin routes=====================*/
 
     // Update admin profile by email
-    app.put("/admins/:email", async (req, res) => {
+    app.put("/admins/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const updateData = req.body;
 
